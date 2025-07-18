@@ -155,6 +155,22 @@ impl Requirement {
         self.metadata.parents.insert(parent_id, parent_info)
     }
 
+    /// Return an iterator over the requirement's 'parents'
+    pub fn parents(&self) -> impl Iterator<Item = (Uuid, &Parent)> {
+        self.metadata
+            .parents
+            .iter()
+            .map(|(&id, parent)| (id, parent))
+    }
+
+    /// Return a mutable iterator over the requirement's 'parents'
+    pub fn parents_mut(&mut self) -> impl Iterator<Item = (Uuid, &mut Parent)> {
+        self.metadata
+            .parents
+            .iter_mut()
+            .map(|(&id, parent)| (id, parent))
+    }
+
     /// Reads a requirement from the given file path.
     ///
     /// Note the path here is the path to the directory. The filename is determined by the HRID

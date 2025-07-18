@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::ArgAction;
 use tracing::instrument;
 
-use crate::storage::Directory;
+use crate::storage::{Directory, Tree};
 
 #[derive(Debug, clap::Parser)]
 #[command(version, about)]
@@ -33,8 +33,7 @@ impl Cli {
             _ => tracing::Level::TRACE,
         };
 
-        let filter = tracing_subscriber::EnvFilter::from_default_env()
-            .add_directive(level.into());
+        let filter = tracing_subscriber::EnvFilter::from_default_env().add_directive(level.into());
 
         let fmt_layer = tracing_subscriber::fmt::layer()
             .pretty()
@@ -58,6 +57,9 @@ pub enum Command {
     ///
     /// Links are parent-child relationships.
     Link(Link),
+
+    /// Correct parent HRIDs
+    Clean(Clean),
 }
 
 impl Command {
@@ -65,6 +67,7 @@ impl Command {
         match self {
             Self::Add(command) => command.run(),
             Self::Link(command) => command.run(),
+            Self::Clean(command) => command.run(),
         }
     }
 }
@@ -107,5 +110,20 @@ impl Link {
     fn run(self) {
         let directory = Directory::open(self.root);
         directory.link_requirement(self.child, self.parent);
+    }
+}
+
+#[derive(Debug, clap::Parser)]
+pub struct Clean {
+    /// The path to the root of the requirements directory
+    #[arg(short, long, default_value = ".")]
+    root: PathBuf,
+}
+
+impl Clean {
+    #[instrument]
+    fn run(self) {
+        let mut tree = Tree::load_all(self.root);
+        tree.update_hrids();
     }
 }
